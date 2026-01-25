@@ -53,11 +53,10 @@ def main():
     slab_len = len(slab)
     calc = get_calculator(mode="lj")
 
-    print("Obliczanie energii tła (pustego h-BN)...")
     slab.calc = calc
     E_slab = slab.get_potential_energy()
     print(
-        f"Energia tła (slab): {E_slab:.4f} eV (będzie odejmowana od wyników)")
+        f"Slab energy: {E_slab:.4f} eV for {len(slab)} atoms")
     # ----------------------------------------------------------
 
     ga = configure_ga(slab, args.db_name, n_Au=6,
@@ -66,7 +65,6 @@ def main():
 
     population.update()
     if len(population.pop) == 0:
-        print(f"Generowanie {args.n_initial} struktur startowych...")
         for i in range(args.n_initial):
             system = add_random_cluster(
                 slab, n_atoms=6, element="Au", seed=args.seed + i)
@@ -83,12 +81,11 @@ def main():
             else:
                 print(f"  [{i + 1}/{args.n_initial}] FAIL")
 
-    print(f"\nStart GA ({args.n_steps} kroków)...")
     for step in range(args.n_steps):
         population.update()
 
         if len(population.pop) < 2:
-            print(f"[{step + 1}] Za mało kandydatów, skip")
+            print(f"[{step + 1}] Not enough candidates, skip")
             continue
 
         parents = population.get_two_candidates()
