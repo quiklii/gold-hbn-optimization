@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gold-hbn-optimization"
+version = "0.1.0"
+description = "Genetic Algorithm optimization of Au6 cluster on h-BN surface"
+requires-python = ">=3.9"
+
+dependencies = [
+    "ase>=3.22.0",
+    "numpy",
+    "scipy",
+    "ase-ga"
+]
