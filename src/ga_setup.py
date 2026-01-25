@@ -14,25 +14,21 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 
 def configure_ga(slab, filename, n_Au=6, population_size=100):
-    # 1. minimalne odległości między atomami (blmin)
     blmin = closest_distances_generator(
-        atom_numbers=[79, 5, 7],  # Au=79, B=5, N=7
+        atom_numbers=[79, 5, 7],
         ratio_of_covalent_radii=0.8
     )
 
-    # 2. baza danych i populacja
-    # Ensure data directory exists
     data_dir = PROJECT_DIR / 'data'
     data_dir.mkdir(exist_ok=True)
 
     db_path = data_dir / filename
 
-    # Create database file if it doesn't exist
     if not db_path.exists():
         print(f"Creating new database: {db_path}")
         PrepareDB(
             db_file_name=str(db_path),
-            stoichiometry=[79] * n_Au,  # n_Au gold atoms
+            stoichiometry=[79] * n_Au,
             cell=slab.get_cell(),
             pbc=slab.get_pbc()
         )
@@ -53,36 +49,29 @@ def configure_ga(slab, filename, n_Au=6, population_size=100):
         comparator=comparator
     )
 
-    # 3. operatory genetyczne
-    # krzyzowanie
     crossover = CutAndSplicePairing(
         slab=slab,
         n_top=n_Au,
         blmin=blmin
     )
-    # drgania(przesuniecia) - rattle
     rattle = RattleMutation(
         blmin=blmin,
         n_top=n_Au
     )
-    # odbicia
     mirror = MirrorMutation(
         blmin=blmin,
         n_top=n_Au
     )
-    # rotacja
     rotation = RotationalMutation(
         blmin=blmin,
         n_top=n_Au
     )
 
-    # 4. selektor operatorów
     selector = OperationSelector(
         [0.3, 0.3, 0.2, 0.2],
         [crossover, rattle, mirror, rotation]
     )
 
-    # Zwracamy wszystko w słowniku
     return {
         'population': population,
         'selector': selector,
