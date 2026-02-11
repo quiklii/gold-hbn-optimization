@@ -1,16 +1,10 @@
 # src/calculators.py
 
 from ase.calculators.lj import LennardJones
+from mace.calculators import mace_mp
 
 
-def get_calculator(mode="lj", **kwargs):
-    mode = (mode or "lj").lower().strip()
-    if mode == "lj":
-        return LennardJones(
-            epsilon=kwargs.get("epsilon", 0.02),
-            sigma=kwargs.get("sigma", 2.8),
-            rc=kwargs.get("rc", 8.0),
-            smooth=kwargs.get("smooth", True)
-        )
-
-    raise ValueError(f"Nieznany tryb: {mode}")
+def get_calculator(mode="mace", device="cpu"):
+    if mode == "mace":
+        return mace_mp(model="medium", device=device, default_dtype="float32")
+    return LennardJones(epsilon=0.02, sigma=2.8)

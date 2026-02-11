@@ -51,7 +51,7 @@ def main():
 
     slab = create_hbn_slab(size=(6, 6, 1), vacuum=20.0)
     slab_len = len(slab)
-    calc = get_calculator(mode="lj")
+    calc = get_calculator(mode="mace", device="cpu")
 
     slab.calc = calc
     E_slab = slab.get_potential_energy()
