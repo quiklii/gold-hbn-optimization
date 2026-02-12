@@ -17,6 +17,6 @@ def get_calculator(mode="mace", device=None):
             device = detect_device()
             print(f"Using device: {device}")
         path = hf_hub_download(repo_id="mace-foundations/mace-mh-1", filename="mace-mh-1.model")
-        return mace_mp(model=path, device=device, default_dtype="float32", head="oc20_usemppbe")
+        return mace_mp(model=path, device=device, default_dtype="float64", head="oc20_usemppbe")
     elif mode == 'lj':
         return LennardJones(epsilon=0.02, sigma=2.8)

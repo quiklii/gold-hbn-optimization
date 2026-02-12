@@ -12,6 +12,34 @@ from src.calculators import get_calculator
 from src.ga_setup import configure_ga
 
 
+def clean_atoms_arrays(atoms):
+    """Remove arrays that don't match the number of atoms."""
+    n_atoms = len(atoms)
+
+    # Clean atoms.arrays (per-atom properties)
+    keys_to_remove = []
+    for key, arr in atoms.arrays.items():
+        if key in ('numbers', 'positions'):  # Essential arrays, skip
+            continue
+        if hasattr(arr, '__len__') and len(arr) != n_atoms:
+            keys_to_remove.append(key)
+
+    for key in keys_to_remove:
+        del atoms.arrays[key]
+
+    # Clean atoms.info (may contain arrays)
+    if 'data' in atoms.info:
+        data_keys_to_remove = []
+        for key, val in atoms.info['data'].items():
+            if hasattr(val, '__len__') and not isinstance(val, str):
+                if len(val) != n_atoms:
+                    data_keys_to_remove.append(key)
+        for key in data_keys_to_remove:
+            del atoms.info['data'][key]
+
+    return atoms
+
+
 def set_raw_score(atoms):
     energy = atoms.get_potential_energy()
     if 'key_value_pairs' not in atoms.info:
@@ -124,8 +152,11 @@ def main():
 
         final_e = best.get_potential_energy() - E_slab
 
+        # Clean up arrays before writing
+        best = clean_atoms_arrays(best.copy())
+
         out = Path("data") / \
-            f"best_{datetime.now():%Y%m%d_%H%M%S}_E{final_e:.2f}.xyz"
+              f"best_{datetime.now():%Y%m%d_%H%M%S}_E{final_e:.2f}.xyz"
         write(out, best)
         print(f"\nBest found: E_ads = {final_e:.4f} eV -> {out}")
 
