@@ -12,5 +12,7 @@ dependencies = [
     "ase>=3.22.0",
     "numpy",
     "scipy",
-    "ase-ga"
+    "ase-ga",
+    "mace-torch",
+    "huggingface_hub"
 ]

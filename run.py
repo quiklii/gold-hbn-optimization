@@ -31,6 +31,7 @@ def parse_args():
     p.add_argument("--population-size", type=int, default=20)
     p.add_argument("--fmax", type=float, default=0.05)
     p.add_argument("--seed", type=int, default=7)
+    p.add_argument("--mode", type=str, default="mace", choices=["mace", "lj"])
     return p.parse_args()
 
 
@@ -51,7 +52,7 @@ def main():
 
     slab = create_hbn_slab(size=(6, 6, 1), vacuum=20.0)
     slab_len = len(slab)
-    calc = get_calculator(mode="mace", device="cpu")
+    calc = get_calculator(mode=args.mode)
 
     slab.calc = calc
     E_slab = slab.get_potential_energy()
