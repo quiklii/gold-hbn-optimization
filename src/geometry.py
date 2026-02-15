@@ -21,7 +21,7 @@ def create_hbn_slab(size: Tuple[int, int, int] = (6, 6, 1),
     ]
 
     slab = Atoms(symbols=['B', 'N'], cell=cell, pbc=[True, True, False])
-    slab.set_scaled_positions([[0.0, 0.0, 0.5], [1/3, 2/3, 0.5]])
+    slab.set_scaled_positions([[0.0, 0.0, 0.5], [1/3, 1/3, 0.5]])
 
     P = [[size[0], 0, 0],
          [0, size[1], 0],
