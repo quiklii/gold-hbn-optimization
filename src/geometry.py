@@ -1,13 +1,17 @@
 # src/geometry.py
 
-from ase.atoms import Atoms
+from typing import Tuple, Optional, List
+import numpy as np
+from ase import Atoms
 from ase.build import make_supercell
 from ase.constraints import FixAtoms
-import numpy as np
+from ase.geometry import get_distances
 
 
-def create_hbn_slab(size=(6, 6, 1), vacuum=20.0):
-    a = 2.504
+def create_hbn_slab(size: Tuple[int, int, int] = (6, 6, 1),
+                    vacuum: float = 20.0,
+                    constraint_mode: str = 'all') -> Atoms:
+    a = 2.51
     c = vacuum
 
     cell = [
@@ -17,58 +21,85 @@ def create_hbn_slab(size=(6, 6, 1), vacuum=20.0):
     ]
 
     slab = Atoms(symbols=['B', 'N'], cell=cell, pbc=[True, True, False])
-    slab.set_scaled_positions([
-        [0.0, 0.0, 1/2],
-        [1/3, 2/3, 1/2]
-    ])
+    slab.set_scaled_positions([[0.0, 0.0, 0.5], [1/3, 2/3, 0.5]])
 
     P = [[size[0], 0, 0],
          [0, size[1], 0],
          [0, 0, size[2]]]
     slab = make_supercell(slab, P)
 
-    constraint = FixAtoms(indices=[atom.index for atom in slab])
-    slab.set_constraint(constraint)
+    if constraint_mode == 'all':
+        constraint = FixAtoms(indices=[atom.index for atom in slab])
+        slab.set_constraint(constraint)
+    elif constraint_mode == 'anchor':
+        constraint = FixAtoms(indices=[0])
+        slab.set_constraint(constraint)
 
     return slab
 
 
-def get_cluster_box(slab, height_range=(2.0, 5.0), margin=1.0):
-    cell = slab.get_cell()
+def get_z_range(slab: Atoms, height_range: Tuple[float, float] = (2.0, 5.0)) -> Tuple[float, float]:
     positions = slab.get_positions()
-
     z_surface = positions[:, 2].max()
-
-    x_max = cell[0, 0] - margin
-    y_max = cell[1, 1] - margin
-
-    box = {
-        'x': (margin, x_max),
-        'y': (margin, y_max),
-        'z': (z_surface + height_range[0], z_surface + height_range[1])
-    }
-
-    return box
+    return (z_surface + height_range[0], z_surface + height_range[1])
 
 
-def add_random_cluster(slab, n_atoms, element='Au', box=None, seed=None):
+def add_random_cluster(slab: Atoms,
+                       n_atoms: int,
+                       element: str = 'Au',
+                       seed: Optional[int] = None,
+                       min_distance: float = 2.0,
+                       max_attempts: int = 1000) -> Atoms:
     rng = np.random.default_rng(seed)
 
-    if box is None:
-        box = get_cluster_box(slab)
+    system = slab.copy()
 
-    positions = np.array([
-        rng.uniform(box['x'][0], box['x'][1], n_atoms),
-        rng.uniform(box['y'][0], box['y'][1], n_atoms),
-        rng.uniform(box['z'][0], box['z'][1], n_atoms)
-    ]).T
+    z_min, z_max = get_z_range(slab)
 
-    cluster = Atoms([element] * n_atoms, positions=positions)
+    cluster_atoms = Atoms()
 
-    system = slab + cluster
-    system.set_cell(slab.get_cell())
-    system.set_pbc(slab.get_pbc())
+    cell = system.get_cell().array
 
-    system.set_constraint(FixAtoms(indices=list(range(len(slab)))))
+    margin_frac = 0.05
 
-    return system
+    for i in range(n_atoms):
+        placed = False
+
+        for attempt in range(max_attempts):
+            u = rng.uniform(margin_frac, 1.0 - margin_frac)
+            v = rng.uniform(margin_frac, 1.0 - margin_frac)
+
+            z = rng.uniform(z_min, z_max)
+
+            pos_xy = u * cell[0] + v * cell[1]
+            pos_candidate = np.array([pos_xy[0], pos_xy[1], z])
+            _, dists_slab = get_distances(
+                pos_candidate, system.positions, cell=cell, pbc=system.pbc)
+
+            if len(cluster_atoms) > 0:
+                _, dists_cluster = get_distances(
+                    pos_candidate, cluster_atoms.positions, cell=cell, pbc=system.pbc)
+                min_d = min(np.min(dists_slab), np.min(dists_cluster))
+            else:
+                min_d = np.min(dists_slab)
+
+            if min_d >= min_distance:
+                atom = Atoms(element, positions=[pos_candidate])
+                cluster_atoms.extend(atom)
+                placed = True
+                break
+
+        if not placed:
+            raise RuntimeError(
+                f"Nie udało się umieścić atomu {i+1}/{n_atoms} po {max_attempts} próbach. "
+                f"Zwiększ obszar (box) lub zmniejsz min_distance."
+            )
+
+    final_system = system + cluster_atoms
+    final_system.set_cell(slab.get_cell())
+    final_system.set_pbc(slab.get_pbc())
+
+    if slab.constraints:
+        final_system.set_constraint(slab.constraints)
+
+    return final_system

@@ -149,15 +149,29 @@ def main():
     population.update()
     if population.pop:
         best = min(population.pop, key=lambda a: a.get_potential_energy())
-
         final_e = best.get_potential_energy() - E_slab
 
-        # Clean up arrays before writing
-        best = clean_atoms_arrays(best.copy())
+        tags = []
+        for atom in best:
+            if atom.symbol == 'Au':
+                tags.append(1)
+            else:
+                tags.append(0)
+        best.set_tags(tags)
 
+        best_to_save = best.copy()
+        best_to_save = clean_atoms_arrays(best_to_save)
+
+        best_to_save.info['comment'] = f"GA Optimized: Au6 on h-BN | E_ads = {final_e:.4f} eV"
+
+        timestamp = datetime.now().strftime("%H%M%S")
         out = Path("data") / \
-              f"best_{datetime.now():%Y%m%d_%H%M%S}_E{final_e:.2f}.xyz"
-        write(out, best)
+            f"best_{timestamp}_E{final_e:.2f}"
+
+        write(f"{out}.xyz", best_to_save, format='extxyz')
+        write(f"{out}.cif", best_to_save)
+        write(f"{out}.png", best_to_save, rotation='0x,0y,-90z')
+
         print(f"\nBest found: E_ads = {final_e:.4f} eV -> {out}")
 
 
