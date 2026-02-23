@@ -1,4 +1,6 @@
-<img src="https://raw.githubusercontent.com/quiklii/gold-hbn-optimization/refs/heads/master/public/readme.png" height="150" />
+<center>
+  <img src="https://raw.githubusercontent.com/quiklii/gold-hbn-optimization/refs/heads/master/public/readme.png" height="150" />
+</center>
 
 # 🧬 GA-Au-hBN: Optymalizacja Klastra Au na h-BN
 
